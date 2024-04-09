@@ -17,14 +17,13 @@ function buildNavbar() {
   `;
 }
 function showEntitySection(entity, fetchData = false) {
-  console.log("here")
   document.querySelectorAll('.entity-section').forEach(section => section.style.display = 'none');
   const entitySection = document.getElementById(`${entity}Section`);
   if (entitySection) {
     entitySection.style.display = 'block';
     // Fetch data only if fetchData is true, which is only set when clicking the Students link
-    if (fetchData && entity === 'students') {
-      fetchEntityData(entity);
+    if (fetchData && entity === 'students'  || fetchData && entity === 'professors' || fetchData && entity === 'proposals' || fetchData && entity === 'candidatures') {
+      ListAll(entity);
     }
   }
 }
@@ -38,7 +37,7 @@ function bindFormSubmissions() {
   });
 }
 
-function fetchEntityData(entity) {
+function ListAll(entity) {
   console.log(`Fetching data for ${entity}...`);
   fetch(`http://localhost:8180/${entity}`)
     .then(response => response.ok ? response.json() : Promise.reject(`HTTP status ${response.status}`))
