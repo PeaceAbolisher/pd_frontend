@@ -21,6 +21,13 @@ function showEntitySection(entity, fetchData = false, hideForm = true) {
   document.querySelectorAll('.entity-section').forEach(section => {
     section.style.display = 'none';
   });
+
+  // Hide the table and the entity info container
+  const entityList = document.getElementById(`${entity}Section`);
+  entityList.style.display = 'none';
+  const entityInfoContainer = document.getElementById('entityInfoContainer');
+  entityInfoContainer.innerHTML = ''; // Clear the entity info table when switching entities
+
   // Hide form container by default
   const formContainer = document.getElementById('formContainer');
   if (hideForm) {
@@ -69,11 +76,11 @@ function renderEntityList(entity, data) {
     console.error(`Element with ID ${entity}List not found.`);
     return; // Exit the function if the element isn't found
   }
-  entityList.innerHTML = data && data.length > 0 ? createEntityTable(entity,data) : 'No data found.';
+  entityList.innerHTML = data && data.length > 0 ? createEntityTable(entity, data) : 'No data found.';
 }
 
 
-function createEntityTable(entity,data) {
+function createEntityTable(entity, data) {
   // Creating table headers based on entity data keys
   const headers = Object.keys(data[0]);
   const thead = `<thead><tr>${headers.map(header => `<th>${header}</th>`).join('')}<th>Actions</th></tr></thead>`;
@@ -84,10 +91,48 @@ function createEntityTable(entity,data) {
     `<td>
       <button class="action-button update" onclick="updateEntity('${entity}', ${item.id})">Update</button>
       <button class="action-button delete" onclick="deleteEntity('${entity}', ${item.id})">Delete</button>
+      <button class="action-button view" onclick="fetchEntityInfo('${entity}', ${item.id})">More Info</button>
     </td></tr>`
   ).join('')}</tbody>`;
   return `<div class="table-container"><table class="entity-table">${thead}${tbody}</table></div>`;
 }
+
+function fetchEntityInfo(entity, id) {
+  // Hide the table
+  const entityList = document.getElementById(`${entity}Section`);
+  entityList.style.display = 'none';
+
+  fetch(`http://localhost:8180/${entity}/${id}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Error fetching ${entity} info: ${response.statusText}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      displayEntityInfo(entity, data);
+    })
+    .catch(error => {
+      console.error(`Error fetching ${entity} info:`, error);
+      alert(`Error fetching ${entity} info: ${error.message}`);
+    });
+}
+
+function displayEntityInfo(entity, data) {
+  const infoTableHtml = createEntityInfoTable(entity, data);
+  const infoContainer = document.getElementById('entityInfoContainer'); // Assuming you have a container element to display the info
+  infoContainer.innerHTML = infoTableHtml;
+}
+
+function createEntityInfoTable(entity, data) {
+  // Creating table headers based on entity data keys
+  const headers = Object.keys(data);
+  const thead = `<thead><tr>${headers.map(header => `<th>${header}</th>`).join('')}</tr></thead>`;
+  const tbody = `<tbody><tr>${Object.values(data).map(value => `<td>${value}</td>`).join('')}</tr></tbody>`;
+  return `<div class="table-container"><table class="entity-info-table">${thead}${tbody}</table></div>`;
+}
+
+
 
 function updateEntity(entity, id) {
   console.log(`Update entity with id: ${id}`);

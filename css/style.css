@@ -141,6 +141,11 @@
   background-color: #d9534f;
   color: white;
 }
+.view{
+  background-color: #428bca;
+  color: white;
+
+}
 
 #createEntityButtonContainer {
   display: none;
@@ -162,5 +167,4 @@
 #createEntityButton:hover {
   background-color: #45a049;
 }
-
 
