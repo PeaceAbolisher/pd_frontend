@@ -17,23 +17,32 @@ function buildNavbar() {
   `;
 }
 function showEntitySection(entity, fetchData = false, hideForm = true) {
+  // Hide all entity sections
   document.querySelectorAll('.entity-section').forEach(section => {
     section.style.display = 'none';
   });
-
+  // Hide form container by default
   const formContainer = document.getElementById('formContainer');
   if (hideForm) {
     formContainer.style.display = 'none';
   }
+  // Hide create button by default
+  const createButtonContainer = document.getElementById('createEntityButtonContainer');
+  createButtonContainer.style.display = 'none';
 
+  // Grab the appropriate entity section
   const entitySection = document.getElementById(`${entity}Section`);
   if (entitySection) {
+    // Display the entity section
     entitySection.style.display = 'block';
+    // Display the create button container when an entity section is active
+    createButtonContainer.style.display = 'block';
     if (fetchData) {
       ListAll(entity);
     }
   }
 }
+
 
 function bindFormSubmissions() {
   document.querySelectorAll('form').forEach(form => {
@@ -132,10 +141,10 @@ function getFormHtmlForEntity(entity) {
     return `
       <form id="updateForm">
         <input type="text" id="studentName" name="name" placeholder="Name">
-        <input type="number" id="studentNumber" name="number" placeholder="Number">
-        <input type="email" id="studentEmail" name="email" placeholder="Email">
+        <input type="text" id="studentNumber" name="number" placeholder="Number">
+        <input type="text" id="studentEmail" name="email" placeholder="Email">
         <input type="text" id="studentCourse" name="course" placeholder="Course">
-        <input type="number" id="studentClassification" name="classification" placeholder="Classification">
+        <input type="text" id="studentClassification" name="classification" placeholder="Classification">
         <button type="submit">OK</button>
       </form>
     `;
@@ -268,7 +277,133 @@ function submitUpdate(entity, id, updatedData) {
     })
     .catch(error => {
       alert('Error Updating!');
-    });
-
+    }
+  );
 }
+
+function showCreateEntityForm() {
+  // Determine which entity form to show based on the active section
+  const currentSection = document.querySelector('.entity-section:not([style*="display: none"])');
+  if (currentSection) {
+    const entity = currentSection.id.replace('Section', '');
+    displayCreateForm(entity);
+  } else {
+    alert('Please select an entity section first.');
+  }
+}
+
+function displayCreateForm(entity) {
+  const formContainer = document.getElementById('formContainer');
+  formContainer.innerHTML = getCreateFormHtmlForEntity(entity); // Generate the form HTML dynamically
+  formContainer.style.display = 'block';
+  bindCreateFormSubmission(entity);
+}
+function getCreateFormHtmlForEntity(entity) {
+  let formFieldsHtml = '';
+  if (entity === 'students') {
+    formFieldsHtml = `
+      <input type="text" name="name" placeholder="Name">
+      <input type="text" name="num" placeholder="Student Number">
+      <input type="text" name="email" placeholder="Email">
+      <input type="text" name="course" placeholder="Course">
+      <input type="text" name="classification" placeholder="Classification">
+    `;
+  } else if (entity === 'professors') {
+    formFieldsHtml = `
+      <input type="text" name="name" placeholder="Name">
+      <input type="text" name="email" placeholder="Email">
+      <input type="text" name="proposals" placeholder="Proposals">
+    `;
+  } else if (entity === 'proposals') {
+    formFieldsHtml = `
+    <input type="text" name="title" placeholder="Title">
+    <input type="text" name="description" placeholder="Description">
+    <input type="text" name="companyName" placeholder="Company Name">
+    <input type="text" name="course" placeholder="Course">
+    <input type="text" name="studentNumber" placeholder="Student Number">
+    <input type="text" name="candidature" placeholder="Candidature ID">
+    <input type="text" name="professor" placeholder="Professor ID">
+  `;
+  } else if (entity === 'candidatures') {
+    formFieldsHtml = `
+      <input type="text" name="student" placeholder="Student ID">
+      <input type="text" name="proposal" placeholder="Proposal ID">
+    `;
+  }
+  const submitButtonHtml = `<button type="submit">Create</button>`;
+  const formHtml = `
+    <form id="createForm">
+      ${formFieldsHtml}
+      ${submitButtonHtml}
+    </form>
+  `;
+  return formHtml;
+}
+
+function bindCreateFormSubmission(entity) {
+  const createForm = document.getElementById('createForm');
+  if (createForm) {
+    createForm.addEventListener('submit', function(event) {
+      event.preventDefault();
+      const formData = new FormData(createForm);
+      const newData = {};
+      formData.forEach((value, key) => {
+        if (key === 'proposals') {
+          // Assuming that if 'proposals' is empty, an empty array should be sent
+          newData[key] = value ? JSON.parse(value) : [];
+        } else {
+          newData[key] = value;
+        }
+      });
+      submitCreate(entity, newData);
+    });
+  }
+}
+
+function submitCreate(entity, newData) {
+  console.log(entity, JSON.stringify(newData));
+
+  // Set empty fields to null
+  Object.keys(newData).forEach(key => {
+    if (newData[key] === "") {
+      newData[key] = null;
+    }
+  });
+  if (newData.candidature) {
+    newData.candidature = { id: newData.candidature };
+  }
+  if (newData.professor) {
+    newData.professor = { id: newData.professor };
+  }
+  fetch(`http://localhost:8180/${entity}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(newData),
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Error Creating: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      alert('Created Successfully!');
+      const formContainer = document.getElementById('formContainer');
+      formContainer.style.display = 'none'; // Hide the form container
+      setTimeout(() => ListAll(entity), 100); // Delay the ListAll call to ensure the new data has time to be processed.
+    })
+    .catch(error => {
+      console.error('Error Creating:', error);
+      alert('Error Creating: ' + error.message);
+    });
+}
+
+
+
+
+
+
+
 

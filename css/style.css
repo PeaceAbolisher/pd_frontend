@@ -142,3 +142,25 @@
   color: white;
 }
 
+#createEntityButtonContainer {
+  display: none;
+  text-align: right; /* Align the button to the right */
+  margin-bottom: 10px; /* Provide some space between the button and the table */
+}
+
+#createEntityButton {
+  padding: 8px 15px; /* Example padding, adjust as needed */
+  background-color: #4CAF50; /* A green background */
+  color: white; /* White text color */
+  border: none; /* No border */
+  border-radius: 5px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor on hover */
+  margin-right: 20px; /* Adjust the right margin as needed */
+}
+
+/* Hover effect for button */
+#createEntityButton:hover {
+  background-color: #45a049;
+}
+
+
