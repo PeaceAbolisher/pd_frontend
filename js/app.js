@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
   buildNavbar();
   bindFormSubmissions();
+  document.getElementById('autoAssignEntityButtonContainer').style.display = 'none';
 });
 
 function buildNavbar() {
@@ -33,23 +34,30 @@ function showEntitySection(entity, fetchData = false, hideForm = true) {
   if (hideForm) {
     formContainer.style.display = 'none';
   }
-  // Hide create button by default
+
+  // Determine visibility for create button
   const createButtonContainer = document.getElementById('createEntityButtonContainer');
-  createButtonContainer.style.display = 'none';
+  createButtonContainer.style.display = entity === 'home' ? 'none' : 'block'; // Hide on home page
+
+  // Determine visibility for auto assign button
+  const autoAssignButtonContainer = document.getElementById('autoAssignEntityButtonContainer');
+  autoAssignButtonContainer.style.display = 'none';
+
+  if (entity === 'proposals') {
+    autoAssignButtonContainer.style.display = 'block';
+  }
 
   // Grab the appropriate entity section
   const entitySection = document.getElementById(`${entity}Section`);
   if (entitySection) {
     // Display the entity section
     entitySection.style.display = 'block';
-    // Display the create button container when an entity section is active
-    createButtonContainer.style.display = 'block';
+    // Fetch data for the entity if required
     if (fetchData) {
       ListAll(entity);
     }
   }
 }
-
 
 function bindFormSubmissions() {
   document.querySelectorAll('form').forEach(form => {
@@ -432,7 +440,7 @@ function submitCreate(entity, newData) {
   console.log(newData);
 
   // Make the POST request to create a new professor
-  fetch(`http://localhost:8180/professors`, {
+  fetch(`http://localhost:8180/${entity}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -447,14 +455,36 @@ function submitCreate(entity, newData) {
       return response.json();
     })
     .then(data => {
-      // Handle successful creation if needed
+      ListAll(entity)
     })
     .catch(error => {
-      // Handle errors
       console.error('Creation error:', error);
-      alert(`Error creating professor: ${error.message}`);
+      alert(`Error creating ${entity}: ${error.message}`);
     });
 }
+
+function showAutoAssignEntityForm() {
+  fetch('http://localhost:8180/proposals/assign', { // Adjust the fetch URL to the correct endpoint
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP status ${response.status}`);
+      }
+      return response.text(); // Since you expect a text response, use response.text() instead of response.json()
+    })
+    .then(message => {
+      alert(message); // Display the message from the response
+    })
+    .catch(error => {
+      console.error('Error during auto assignment:', error);
+      alert('Error during auto assignment: ' + error.message);
+    });
+}
+
 
 
 
