@@ -101,6 +101,8 @@ function fetchEntityInfo(entity, id) {
   // Hide the table
   const entityList = document.getElementById(`${entity}Section`);
   entityList.style.display = 'none';
+  const formContainer = document.getElementById('formContainer');
+  formContainer.style.display = 'none';
 
   fetch(`http://localhost:8180/${entity}/${id}`)
     .then(response => {
@@ -122,13 +124,18 @@ function displayEntityInfo(entity, data) {
   const infoTableHtml = createEntityInfoTable(entity, data);
   const infoContainer = document.getElementById('entityInfoContainer'); // Assuming you have a container element to display the info
   infoContainer.innerHTML = infoTableHtml;
+
+  // Hide the create button container
+  const createButtonContainer = document.getElementById('createEntityButtonContainer');
+  createButtonContainer.style.display = 'none';
 }
+
 
 function createEntityInfoTable(entity, data) {
   // Creating table headers based on entity data keys
   const headers = Object.keys(data);
   const thead = `<thead><tr>${headers.map(header => `<th>${header}</th>`).join('')}</tr></thead>`;
-  const tbody = `<tbody><tr>${Object.values(data).map(value => `<td>${value}</td>`).join('')}</tr></tbody>`;
+  const tbody = `<tbody><tr>${Object.values(data).map(value => `<td>${value !== null ? value : ''}</td>`).join('')}</tr></tbody>`;
   return `<div class="table-container"><table class="entity-info-table">${thead}${tbody}</table></div>`;
 }
 
@@ -352,6 +359,8 @@ function getCreateFormHtmlForEntity(entity) {
       <input type="text" name="email" placeholder="Email">
       <input type="text" name="course" placeholder="Course">
       <input type="text" name="classification" placeholder="Classification">
+      <input type="text" name="candidature" placeholder="Candidature">
+
     `;
   } else if (entity === 'professors') {
     formFieldsHtml = `
@@ -414,13 +423,16 @@ function submitCreate(entity, newData) {
       newData[key] = null;
     }
   });
-  if (newData.candidature) {
-    newData.candidature = { id: newData.candidature };
+
+  // If proposals is present, convert it to an array of objects with 'id' key
+  if (newData.proposals) {
+    newData.proposals = newData.proposals.map(proposalId => ({ id: proposalId }));
   }
-  if (newData.professor) {
-    newData.professor = { id: newData.professor };
-  }
-  fetch(`http://localhost:8180/${entity}`, {
+
+  console.log(newData);
+
+  // Make the POST request to create a new professor
+  fetch(`http://localhost:8180/professors`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -429,21 +441,21 @@ function submitCreate(entity, newData) {
   })
     .then(response => {
       if (!response.ok) {
-        throw new Error(`Error Creating: ${response.status} ${response.statusText}`);
+        // Assuming the server sends a JSON response for errors
+        return response.json().then(err => Promise.reject(err));
       }
       return response.json();
     })
     .then(data => {
-      alert('Created Successfully!');
-      const formContainer = document.getElementById('formContainer');
-      formContainer.style.display = 'none'; // Hide the form container
-      setTimeout(() => ListAll(entity), 100); // Delay the ListAll call to ensure the new data has time to be processed.
+      // Handle successful creation if needed
     })
     .catch(error => {
-      console.error('Error Creating:', error);
-      alert('Error Creating: ' + error.message);
+      // Handle errors
+      console.error('Creation error:', error);
+      alert(`Error creating professor: ${error.message}`);
     });
 }
+
 
 
 
