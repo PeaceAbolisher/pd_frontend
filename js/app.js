@@ -175,48 +175,6 @@ function hideBackButton() {
   document.getElementById('backButtonContainer').style.display = 'none'; // Hide the Back button
 }
 
-
-
-
-function createEntityInfoTable(entity, data) {
-  let headers;
-  let values;
-
-  if (entity === 'professors' && data.proposals && data.proposals.length > 0) {
-    // Assuming data.proposals is an array of proposal objects
-    headers = ['Name', 'Email', 'Title', 'Description', 'Company Name', 'Course', 'Student Number', 'Candidature ID'];
-    // Flatten the proposals into string for display purposes
-    values = data.proposals.map(proposal => [
-      data.name,
-      data.email,
-      proposal.title,
-      proposal.description,
-      proposal.companyName,
-      proposal.course,
-      proposal.studentNumber,
-      proposal.candidature_id // Assuming this is the ID and is directly accessible
-    ]);
-  } else {
-    // If not a professor or no proposals, display normal info
-    headers = Object.keys(data);
-    values = [Object.values(data)];
-  }
-
-  // Generate the HTML for the table header
-  const thead = `<thead><tr>${headers.map(header => `<th>${header}</th>`).join('')}</tr></thead>`;
-
-  // Generate the HTML for the table body
-  const tbody = `
-    <tbody>
-      ${values.map(row => `<tr>${row.map(value => `<td>${value !== null ? value : ''}</td>`).join('')}</tr>`).join('')}
-    </tbody>
-  `;
-
-  return `<div class="table-container"><table class="entity-info-table">${thead}${tbody}</table></div>`;
-}
-
-
-
 function updateEntity(entity, id) {
   console.log(`Update entity with id: ${id}`);
 
@@ -265,16 +223,7 @@ function deleteEntity(entity, id) {
         return response.json(); // Parse JSON content
       }
     })
-    .then(data => {
-      alert(`Deleted Successfully!`);
-      ListAll(entity); // Refresh the entity list after deletion
-    })
-    .catch(error => {
-      alert(`Error Deleting`);
-    });
 }
-
-
 
 
 function displayUpdateForm(entity, id) {
@@ -293,8 +242,8 @@ function getFormHtmlForEntity(entity) {
   if (entity === 'students') {
     return `
       <form id="updateForm">
+        <input type="text" id="studentNumber" name="number" placeholder="Student Number">
         <input type="text" id="studentName" name="name" placeholder="Name">
-        <input type="text" id="studentNumber" name="number" placeholder="Number">
         <input type="text" id="studentEmail" name="email" placeholder="Email">
         <input type="text" id="studentCourse" name="course" placeholder="Course">
         <input type="text" id="studentClassification" name="classification" placeholder="Classification">
@@ -307,7 +256,7 @@ function getFormHtmlForEntity(entity) {
       <form id="updateForm">
         <input type="text" id="professorName" name="name" placeholder="Name">
         <input type="text" id="professorEmail" name="email" placeholder="Email">
-        <input type="text" id="professorProposals" name="proposals" placeholder="Proposals">
+        <input type="text" id="professorProposalsId" name="proposals" placeholder="Proposal Id">
         <button type="submit">OK</button>
       </form>
     `;
@@ -320,8 +269,6 @@ function getFormHtmlForEntity(entity) {
         <input type="text" id="proposalCompanyName" name="companyName" placeholder="Company Name">
         <input type="text" id="proposalCourse" name="course" placeholder="Course">
         <input type="text" id="proposalStudentNumber" name="studentNumber" placeholder="Student Number">
-        <input type="text" id="proposalCandidature" name="candidature" placeholder="Candidature ID">
-        <input type="text" id="proposalProfessor" name="professor" placeholder="Professor ID">
         <button type="submit">OK</button>
       </form>
     `;
@@ -331,10 +278,22 @@ function getFormHtmlForEntity(entity) {
       <form id="updateCandidatureForm">
         <input type="text" id="candidatureStudent" name="student" placeholder="Student ID">
         <input type="text" id="candidatureProposal" name="proposal" placeholder="Proposal ID">
+        <div class="assignment-section">
+          <label class="assignment-label">Used in Assignment</label>
+          <div class="radio-option">
+            <label class="radio-label" for="usedInAssignmentYes">Yes</label>
+            <input type="radio" id="usedInAssignmentYes" name="usedInAssignment" value="Yes" checked>
+          </div>
+          <div class="radio-option">
+            <label class="radio-label" for="usedInAssignmentNo">No</label>
+            <input type="radio" id="usedInAssignmentNo" name="usedInAssignment" value="No">
+          </div>
+        </div>
         <button type="submit">OK</button>
       </form>
     `;
   }
+
 }
 
 function populateFormFields(entity, data) {
@@ -348,7 +307,7 @@ function populateFormFields(entity, data) {
   if (entity === 'professors') {
     document.getElementById('professorName').value = data.name || '';
     document.getElementById('professorEmail').value = data.email || '';
-    document.getElementById('professorProposals').value = data.proposals || '';
+    document.getElementById('professorProposalsId').value = data.proposals || '';
   }
   if (entity === 'proposals') {
     document.getElementById('proposalTitle').value = data.title || '';
@@ -422,16 +381,8 @@ function submitUpdate(entity, id, updatedData) {
         throw new Error(`Error Updating: ${response.status} ${response.statusText}`);
       }
       return response.json();
-    })
-    .then(data => {
-      alert('Updated Successfully!');
-      // After successfully updating, refresh the list and hide the form
-      showEntitySection(entity, true, true);
-    })
-    .catch(error => {
-      alert('Error Updating!');
     }
-  );
+  )
 }
 
 function showCreateEntityForm() {
@@ -499,8 +450,8 @@ function getCreateFormHtmlForEntity(entity) {
 
   if (entity === 'students') {
     formFieldsHtml += `
-      <div><label for="studentName">Name:</label><input type="text" id="studentName" name="name" placeholder="Name"></div>
       <div><label for="studentNumber">Student Number:</label><input type="text" id="studentNumber" name="num" placeholder="Student Number"></div>
+      <div><label for="studentName">Name:</label><input type="text" id="studentName" name="name" placeholder="Name"></div>
       <div><label for="studentEmail">Email:</label><input type="text" id="studentEmail" name="email" placeholder="Email"></div>
       <div><label for="studentCourse">Course:</label><input type="text" id="studentCourse" name="course" placeholder="Course"></div>
       <div><label for="studentClassification">Classification:</label><input type="text" id="studentClassification" name="classification" placeholder="Classification"></div>
@@ -509,12 +460,6 @@ function getCreateFormHtmlForEntity(entity) {
     formFieldsHtml += `
       <div><label for="professorName">Name:</label><input type="text" id="professorName" name="name" placeholder="Professor Name"></div>
       <div><label for="professorEmail">Email:</label><input type="text" id="professorEmail" name="email" placeholder="Professor Email"></div>
-      <div><label for="titleProposal">Proposal's Title:</label><input type="text" id="titleProposal" name="titleProposal" placeholder="Title Proposal"></div>
-      <div><label for="descriptionProposal">Proposal's Description:</label><input type="text" id="descriptionProposal" name="descriptionProposal" placeholder="Description Proposal"></div>
-      <div><label for="companyNameProposal">Proposal's Company Name:</label><input type="text" id="companyNameProposal" name="companyNameProposal" placeholder="Proposal's Company Name"></div>
-      <div><label for="courseProposal">Proposal's Course:</label><input type="text" id="courseProposal" name="courseProposal" placeholder="Proposal's Course"></div>
-      <div><label for="studentNumberProposal">Proposal's Student Number:</label><input type="text" id="studentNumberProposal" name="studentNumberProposal" placeholder="Proposal's Student Number"></div>
-      <div><label for="candidatureIdProposal">Proposal's Candidature Id:</label><input type="text" id="candidatureIdProposal" name="candidatureIdProposal" placeholder="Proposal's Candidature Id"></div>
     `;
   } else if (entity === 'proposals') {
     formFieldsHtml += `
@@ -522,8 +467,6 @@ function getCreateFormHtmlForEntity(entity) {
       <div><label for="proposalDescription">Description:</label><input type="text" id="proposalDescription" name="description" placeholder="Description"></div>
       <div><label for="proposalCompanyName">Company Name:</label><input type="text" id="proposalCompanyName" name="companyName" placeholder="Company Name"></div>
       <div><label for="proposalCourse">Course:</label><input type="text" id="proposalCourse" name="course" placeholder="Course"></div>
-      <div><label for="proposalStudentNumber">Student Number:</label><input type="text" id="proposalStudentNumber" name="studentNumber" placeholder="Student Number"></div>
-      <div><label for="proposalCandidature">Candidature ID:</label><input type="text" id="proposalCandidature" name="candidature" placeholder="Candidature ID"></div>
     `;
   } else if (entity === 'candidatures') {
     formFieldsHtml += `
@@ -617,7 +560,6 @@ function bindCreateFormSubmission(entity) {
           } else {
             console.error("Invalid input for proposals. Expected format: '1,2,3,...'");
             alert("Invalid input for proposals. Expected format: '1,2,3,...'");
-            return; // Prevent the form from being submitted with invalid data
           }
         } else {
           newData[key] = value;
@@ -683,11 +625,7 @@ function submitCreate(entity, newData) {
         return response.json().then(err => Promise.reject(err));
       }
       return response.json();
-    })
-    .then(data => {
-      ListAll(entity);
-    })
-    .catch(error => {
+    }).catch(error => {
       console.error('Creation error:', error);
     });
 }

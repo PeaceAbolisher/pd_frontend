@@ -308,8 +308,24 @@
   min-width: 100px; /* Optional: Ensures a minimum width for the button */
   /* Rest of your button styles */
 }
+.assignment-section {
+  display: block;
+}
 
-/* Apply the form-button-container class to the Create button's div in your getCreateFormHtmlForEntity function */
+.assignment-label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
 
+.radio-option {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px; /* space between radio options */
+}
+
+.radio-option label {
+  margin-right: 10px;
+}
 
 
