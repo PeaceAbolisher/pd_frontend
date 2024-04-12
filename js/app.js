@@ -149,10 +149,11 @@ function displayEntityInfo(entity, data) {
 
   // Create table rows for each key in the data object
   Object.keys(data).forEach(key => {
+    const value = data[key] === null ? '' : data[key];
     htmlContent += `
       <tr>
         <th>${key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')}</th>
-        <td>${data[key]}</td>
+        <td>${value}</td>
       </tr>
     `;
   });
