@@ -89,21 +89,40 @@ function renderEntityList(entity, data) {
 
 
 function createEntityTable(entity, data) {
-  // Creating table headers based on entity data keys
-  const headers = Object.keys(data[0]);
-  const thead = `<thead><tr>${headers.map(header => `<th>${header}</th>`).join('')}<th>Actions</th></tr></thead>`;
-  const tbody = `<tbody>${data.map(item =>
-    `<tr>${Object.values(item).map(value => {
-      return `<td>${value !== null ? value : ''}</td>`;
-    }).join('')}` +
-    `<td>
-      <button class="action-button update" onclick="updateEntity('${entity}', ${item.id})">Update</button>
-      <button class="action-button delete" onclick="deleteEntity('${entity}', ${item.id})">Delete</button>
-      <button class="action-button view" onclick="fetchEntityInfo('${entity}', ${item.id})">More Info</button>
-    </td></tr>`
-  ).join('')}</tbody>`;
+  // Creating table headers based on entity data keys, excluding proposals for professors
+  let headers = Object.keys(data[0]);
+  if (entity === 'professors') {
+    headers = headers.filter(header => header !== 'proposals');
+    headers.push('Proposals'); // Add Proposals as the last header before Actions for professors
+  }
+  headers.push('Actions'); // Actions header should be last
+
+  const thead = `<thead><tr>${headers.map(header => `<th>${header}</th>`).join('')}</tr></thead>`;
+  const tbody = `<tbody>${data.map(item => {
+    const rowCells = headers.map(header => {
+      if (header === 'Proposals' && entity === 'professors') {
+        // Return a tick or cross depending on whether proposals are present
+        return `<td>${item.proposals && item.proposals.length > 0 ? '✔️' : '❌'}</td>`;
+      } else if (header !== 'Actions') {
+        // Return the normal data cell
+        return `<td>${item[header] !== null ? item[header] : ''}</td>`;
+      }
+      return ''; // Skip cell creation for 'Actions' header, as it will be added separately
+    }).join('');
+
+    const actionButtons = `
+      <td>
+        <button class="action-button update" onclick="updateEntity('${entity}', ${item.id})">Update</button>
+        <button class="action-button delete" onclick="deleteEntity('${entity}', ${item.id})">Delete</button>
+        <button class="action-button view" onclick="fetchEntityInfo('${entity}', ${item.id})">More Info</button>
+      </td>
+    `;
+
+    return `<tr>${rowCells}${actionButtons}</tr>`;
+  }).join('')}</tbody>`;
   return `<div class="table-container"><table class="entity-table">${thead}${tbody}</table></div>`;
 }
+
 
 function fetchEntityInfo(entity, id) {
   // Hide the table
@@ -129,21 +148,80 @@ function fetchEntityInfo(entity, id) {
 }
 
 function displayEntityInfo(entity, data) {
-  const infoTableHtml = createEntityInfoTable(entity, data);
-  const infoContainer = document.getElementById('entityInfoContainer'); // Assuming you have a container element to display the info
-  infoContainer.innerHTML = infoTableHtml;
+  // Check if the entity is a professor and has proposals
+  if (entity === 'professors' && data.proposals && data.proposals.length > 0) {
+    // Construct the detailed information for the professor's proposals
+    const proposalDetails = data.proposals.map(proposal => {
+      return `
+        <h3>Proposal ID: ${proposal.id}</h3>
+        <p>Title: ${proposal.title}</p>
+        <p>Description: ${proposal.description}</p>
+        <p>Company Name: ${proposal.companyName}</p>
+        <p>Course: ${proposal.course}</p>
+        <p>Student Number: ${proposal.studentNumber}</p>
+        <p>Candidature ID: ${proposal.candidature_id}</p>
+      `;
+    }).join('');
 
-  // Hide the create button container
-  const createButtonContainer = document.getElementById('createEntityButtonContainer');
-  createButtonContainer.style.display = 'none';
+    // Display the details in the entityInfoContainer
+    const infoContainer = document.getElementById('entityInfoContainer');
+    infoContainer.innerHTML = proposalDetails;
+  } else {
+    // For other entities or professors without proposals, use existing functionality
+    const infoTableHtml = createEntityInfoTable(entity, data);
+    const infoContainer = document.getElementById('entityInfoContainer');
+    infoContainer.innerHTML = infoTableHtml;
+  }
+
+  // Append the back button to the button container
+  const buttonContainer = document.getElementById('createEntityButtonContainer');
+  const backButton = document.createElement('button');
+  backButton.className = 'back-button';
+  backButton.innerText = 'Back';
+  backButton.onclick = function() {
+    showEntitySection(entity);
+  };
+  buttonContainer.appendChild(backButton);
 }
 
 
+
+
+
 function createEntityInfoTable(entity, data) {
-  // Creating table headers based on entity data keys
-  const headers = Object.keys(data);
+  let headers;
+  let values;
+
+  if (entity === 'professors' && data.proposals && data.proposals.length > 0) {
+    // Assuming data.proposals is an array of proposal objects
+    headers = ['Name', 'Email', 'Title', 'Description', 'Company Name', 'Course', 'Student Number', 'Candidature ID'];
+    // Flatten the proposals into string for display purposes
+    values = data.proposals.map(proposal => [
+      data.name,
+      data.email,
+      proposal.title,
+      proposal.description,
+      proposal.companyName,
+      proposal.course,
+      proposal.studentNumber,
+      proposal.candidature_id // Assuming this is the ID and is directly accessible
+    ]);
+  } else {
+    // If not a professor or no proposals, display normal info
+    headers = Object.keys(data);
+    values = [Object.values(data)];
+  }
+
+  // Generate the HTML for the table header
   const thead = `<thead><tr>${headers.map(header => `<th>${header}</th>`).join('')}</tr></thead>`;
-  const tbody = `<tbody><tr>${Object.values(data).map(value => `<td>${value !== null ? value : ''}</td>`).join('')}</tr></tbody>`;
+
+  // Generate the HTML for the table body
+  const tbody = `
+    <tbody>
+      ${values.map(row => `<tr>${row.map(value => `<td>${value !== null ? value : ''}</td>`).join('')}</tr>`).join('')}
+    </tbody>
+  `;
+
   return `<div class="table-container"><table class="entity-info-table">${thead}${tbody}</table></div>`;
 }
 
@@ -371,10 +449,20 @@ function getCreateFormHtmlForEntity(entity) {
 
     `;
   } else if (entity === 'professors') {
+    // Professor form fields including all fields necessary to create a proposal
     formFieldsHtml = `
-      <input type="text" name="name" placeholder="Name">
-      <input type="text" name="email" placeholder="Email">
-      <input type="text" name="proposals" placeholder="Proposals">
+      <input type="text" name="name" placeholder="Professor Name">
+      <input type="text" name="email" placeholder="Professor Email">
+      <div id="proposalFieldsContainer">
+        <div class="singleProposalFields">
+          <input type="text" name="title[]" placeholder="Proposal Title">
+          <input type="text" name="description[]" placeholder="Proposal Description">
+          <input type="text" name="companyName[]" placeholder="Company Name Proposal">
+          <input type="text" name="course[]" placeholder="Course Proposal">
+          <input type="text" name="studentNumber[]" placeholder="Student Number Proposal">
+          <input type="text" name="candidature_id[]" placeholder="Candidature ID Proposal">
+        </div>
+      </div>
     `;
   } else if (entity === 'proposals') {
     formFieldsHtml = `
@@ -394,13 +482,60 @@ function getCreateFormHtmlForEntity(entity) {
   }
   const submitButtonHtml = `<button type="submit">Create</button>`;
   const formHtml = `
-    <form id="createForm">
+    <form id="createForm" onsubmit="handleSubmit(event, '${entity}')">
       ${formFieldsHtml}
       ${submitButtonHtml}
     </form>
   `;
   return formHtml;
 }
+
+function handleSubmit(event, entity) {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+  let newData = {
+    name: formData.get('name'),
+    email: formData.get('email'),
+    proposals: [{
+      title: formData.get('title'),
+      description: formData.get('description'),
+      companyName: formData.get('companyName'),
+      course: formData.get('course'),
+      studentNumber: formData.get('studentNumber'),
+      candidature_id: parseInt(formData.get('candidature_id'), 10)
+    }]
+  };
+
+  // Collect all proposal related data
+  const proposalTitles = formData.getAll('title[]');
+  const proposalDescriptions = formData.getAll('description[]');
+  const proposalCompanyNames = formData.getAll('companyName[]');
+  const proposalCourses = formData.getAll('course[]');
+  const proposalStudentNumbers = formData.getAll('studentNumber[]');
+  const proposalCandidatureIds = formData.getAll('candidature_id[]');
+
+  // Create proposal objects and add to the newData.proposals array
+  for (let i = 0; i < proposalTitles.length; i++) {
+    let proposal = {
+      title: proposalTitles[i],
+      description: proposalDescriptions[i],
+      companyName: proposalCompanyNames[i],
+      course: proposalCourses[i],
+      studentNumber: proposalStudentNumbers[i],
+      candidature_id: parseInt(proposalCandidatureIds[i], 10)
+    };
+    // Only add proposal if the candidature ID is a number
+    if (!isNaN(proposal.candidature_id)) {
+      newData.proposals.push(proposal);
+    }
+  }
+
+  console.log("Prepared newData for submission:", newData);
+  submitCreate(entity, newData);
+}
+
+
 
 function bindCreateFormSubmission(entity) {
   const createForm = document.getElementById('createForm');
@@ -411,16 +546,33 @@ function bindCreateFormSubmission(entity) {
       const newData = {};
       formData.forEach((value, key) => {
         if (key === 'proposals') {
-          // Assuming that if 'proposals' is empty, an empty array should be sent
-          newData[key] = value ? JSON.parse(value) : [];
+          if (/^(\d+,)*\d+$/.test(value)) {
+            const proposalIds = value.split(',').map(proposalId => {
+              console.log("Raw proposalId:", proposalId); // Log the raw proposal ID
+              proposalId = proposalId.trim(); // Trim whitespace from the proposal ID
+              console.log("Trimmed proposalId:", proposalId); // Log the trimmed proposal ID
+              const parsedId = parseInt(proposalId, 10);
+              console.log("Parsed proposalId:", parsedId); // Log the parsed proposal ID
+              return parsedId;
+            });
+            console.log("Final proposalIds array:", proposalIds); // Log the final array of proposal IDs
+            newData[key] = proposalIds.map(proposalId => ({ id: proposalId }));
+          } else {
+            console.error("Invalid input for proposals. Expected format: '1,2,3,...'");
+            alert("Invalid input for proposals. Expected format: '1,2,3,...'");
+            return; // Prevent the form from being submitted with invalid data
+          }
         } else {
           newData[key] = value;
         }
       });
+      console.log("Prepared newData for submission:", newData);
       submitCreate(entity, newData);
     });
   }
 }
+
+
 
 function submitCreate(entity, newData) {
   console.log(entity, JSON.stringify(newData));
@@ -432,14 +584,35 @@ function submitCreate(entity, newData) {
     }
   });
 
-  // If proposals is present, convert it to an array of objects with 'id' key
-  if (newData.proposals) {
-    newData.proposals = newData.proposals.map(proposalId => ({ id: proposalId }));
+  // Handling for the 'professors' entity, where 'proposals' are IDs
+  if (entity === 'professors' && newData.proposals) {
+    const proposalIds = newData.proposals.split(',').map(proposalId => ({ id: parseInt(proposalId.trim(), 10) }));
+    newData.proposals = proposalIds.filter(proposal => !isNaN(proposal.id)); // Filter out any NaN values
   }
 
-  console.log(newData);
+  // Handling for creating a single 'proposal', assuming this is the correct structure
+  if (entity === 'proposals') {
+    const proposalsData = [{
+      title: newData.title,
+      description: newData.description,
+      companyName: newData.companyName,
+      course: newData.course,
+      studentNumber: newData.studentNumber,
+      candidature_id: parseInt(newData.candidature_id, 10)
+    }];
 
-  // Make the POST request to create a new professor
+    // Ensure candidature_id is a number
+    if (isNaN(proposalsData[0].candidature_id)) {
+      console.error('Invalid candidature_id:', newData.candidature_id);
+      return; // Exit without submitting
+    }
+
+    newData = proposalsData[0]; // Set newData to the structured proposal object
+  }
+
+  console.log("Final newData to submit:", JSON.stringify(newData));
+
+  // Make the POST request to create a new entity
   fetch(`http://localhost:8180/${entity}`, {
     method: 'POST',
     headers: {
@@ -455,13 +628,16 @@ function submitCreate(entity, newData) {
       return response.json();
     })
     .then(data => {
-      ListAll(entity)
+      ListAll(entity);
     })
     .catch(error => {
       console.error('Creation error:', error);
-      alert(`Error creating ${entity}: ${error.message}`);
     });
 }
+
+
+
+
 
 function showAutoAssignEntityForm() {
   fetch('http://localhost:8180/proposals/assign', { // Adjust the fetch URL to the correct endpoint

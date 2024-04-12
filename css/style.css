@@ -79,7 +79,12 @@
 
 /* Style adjustments for entity sections */
 .entity-section {
-  padding: 20px;
+  padding: 10px; /* Reduce padding to decrease the gap */
+}
+
+/* Increase spacing between table and the button container */
+.entity-section:last-child {
+  margin-bottom: 20px; /* Increase bottom margin for spacing */
 }
 
 .update-icon, .delete-icon {
@@ -92,6 +97,7 @@
 }
 
 .table-container {
+  width: 100%; /* Ensure the container takes full width */
   margin: 0 auto;
   overflow-x: auto;
 }
@@ -150,18 +156,22 @@
 #createEntityButtonContainer {
   display: none;
   text-align: right; /* Align the button to the right */
-  margin-bottom: 10px; /* Provide some space between the button and the table */
+  margin-bottom: 20px; /* Increase space between the button and the table */
 }
 
 #createEntityButton {
-  padding: 8px 15px; /* Example padding, adjust as needed */
-  background-color: #4CAF50; /* A green background */
+  padding: 12px 24px; /* Increase padding for larger button size */
+  background-color: #4CAF50; /* Green background */
   color: white; /* White text color */
   border: none; /* No border */
   border-radius: 5px; /* Rounded corners */
   cursor: pointer; /* Pointer cursor on hover */
-  margin-right: 20px; /* Adjust the right margin as needed */
+  margin-right: 10px; /* Adjust the right margin as needed */
+  margin-bottom: 10px; /* Add margin to separate the buttons */
+
 }
+
+
 
 /* Hover effect for button */
 #createEntityButton:hover {
@@ -197,4 +207,40 @@
   background-color: #ddd;
 }
 
+#autoAssignEntityButtonContainer {
+  display: block; /* Ensure the button container is visible */
+  text-align: right; /* Align the button to the right */
+  margin-bottom: 20px; /* Increase space between the button and the table */
+}
 
+#autoAssignEntityButton {
+  padding: 10px 20px; /* Adjust padding to match the "Create" button */
+  background-color: #428bca; /* Blue background color */
+  color: white; /* White text color */
+  border: none; /* No border */
+  border-radius: 5px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor on hover */
+}
+
+/* Hover effect for button */
+#autoAssignEntityButton:hover {
+  background-color: #3071a9; /* Darker blue on hover */
+}
+
+.back-button {
+  padding: 12px 24px; /* Adjust padding for button size */
+  background-color: #808080; /* Grey background */
+  color: white; /* White text color */
+  border: none; /* No border */
+  border-radius: 5px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor on hover */
+  margin-left: 10px; /* Adjust margin to separate buttons */
+}
+
+/* Hover effect for button */
+.back-button:hover {
+  background-color: #6c6c6c; /* Darker grey on hover */
+}
+#entityInfoContainer {
+  margin-bottom: 20px; /* Add bottom margin to separate from buttons */
+}
