@@ -219,9 +219,34 @@ function createEntityInfoTable(entity, data) {
 
 function updateEntity(entity, id) {
   console.log(`Update entity with id: ${id}`);
-  showEntitySection(entity, false, false);
+
+  // Hide all entity sections
+  document.querySelectorAll('.entity-section').forEach(section => {
+    section.style.display = 'none';
+  });
+
+  // Hide the entity list
+  const entityListSection = document.getElementById(`${entity}Section`);
+  if (entityListSection) {
+    entityListSection.style.display = 'none';
+  }
+
+  // Hide the Create button
+  const createButtonContainer = document.getElementById('createEntityButtonContainer');
+  if (createButtonContainer) {
+    createButtonContainer.style.display = 'none';
+  }
+
+  // Show the Back button
+  const backButtonContainer = document.getElementById('backButtonContainer');
+  if (backButtonContainer) {
+    backButtonContainer.style.display = 'block';
+  }
+
+  // Show and populate the update form
   displayUpdateForm(entity, id);
 }
+
 
 
 function deleteEntity(entity, id) {

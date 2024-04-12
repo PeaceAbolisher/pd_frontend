@@ -6,9 +6,6 @@ const CopyPlugin = require('copy-webpack-plugin');
 module.exports = merge(common, {
   mode: 'production',
   plugins: [
-    new HtmlWebpackPlugin({
-      template: './candidatureList.html',
-    }),
     new CopyPlugin({
       patterns: [
         { from: 'img', to: 'img' },
