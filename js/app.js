@@ -77,7 +77,6 @@ function createEntityTable(entity, data) {
   // Creating table headers based on entity data keys, excluding proposals for professors
   let headers = Object.keys(data[0]);
   if (entity === 'students') {
-    // Add 'Candidature' as a header for students
     headers.push('Candidature');
   }else if (entity === 'professors') {
     headers = headers.filter(header => header !== 'proposals');
@@ -260,7 +259,7 @@ function getFormHtmlForEntity(entity) {
   if (entity === 'students') {
     return `
       <form id="updateForm">
-        <input type="text" id="studentNumber" name="number" placeholder="Student Number">
+        <input type="text" id="studentNumber" name="studentNumber" placeholder="Student Number">
         <input type="text" id="studentName" name="name" placeholder="Name">
         <input type="text" id="studentEmail" name="email" placeholder="Email">
         <input type="text" id="studentCourse" name="course" placeholder="Course">
@@ -315,29 +314,15 @@ function getFormHtmlForEntity(entity) {
 }
 
 function populateFormFields(entity, data) {
-  if (entity === 'students') {
-    document.getElementById('studentName').value = data.name || '';
-    document.getElementById('studentNumber').value = data.number || '';
-    document.getElementById('studentEmail').value = data.email || '';
-    document.getElementById('studentCourse').value = data.course || '';
-    document.getElementById('studentClassification').value = data.classification || '';
-  }
-  if (entity === 'professors') {
-    document.getElementById('professorName').value = data.name || '';
-    document.getElementById('professorEmail').value = data.email || '';
-    document.getElementById('professorProposalsId').value = data.proposals || '';
-  }
-  if (entity === 'proposals') {
-    document.getElementById('proposalTitle').value = data.title || '';
-    document.getElementById('proposalDescription').value = data.description || '';
-    document.getElementById('proposalCompanyName').value = data.companyName || '';
-    document.getElementById('proposalCourse').value = data.course || '';
-    document.getElementById('proposalStudentNumber').value = data.studentNumber || '';
-    document.getElementById('proposalCandidature').value = data.candidature ? data.candidature.id : '';
-    document.getElementById('proposalProfessor').value = data.professor ? data.professor.id : '';
-  }
-  if (entity === 'candidatures') {
-    // TO DO
+  // Assume data comes in with the keys as they are named in the HTML form
+  const form = document.getElementById('updateForm');
+  for (const key in data) {
+    if (data.hasOwnProperty(key)) {
+      const element = form.elements.namedItem(key);
+      if (element) {
+        element.value = data[key] || '';
+      }
+    }
   }
 }
 
@@ -361,9 +346,11 @@ function bindUpdateFormSubmission(entity, id) {
     if (entity === 'professors') {
       updatedData = {
         name: updatedData.name,
-        email: updatedData.email
+        email: updatedData.email,
+        proposalsIds: Array.isArray(updatedData.proposalsIds) ? updatedData.proposalsIds : []
       };
     }
+
     if (entity === 'proposals') {
       updatedData = {
         title: updatedData.title,
@@ -386,22 +373,41 @@ function bindUpdateFormSubmission(entity, id) {
 }
 
 function submitUpdate(entity, id, updatedData) {
-  console.log(entity, id, JSON.stringify(updatedData));
+  console.log(`Updating entity with ID: ${id}`, 'Data:', updatedData);
+
+  // Create a FormData object and append the data to it
+  const formData = new FormData();
+  for (const key in updatedData) {
+    formData.append(key, updatedData[key]);
+  }
+
+  // Make the PUT request with the FormData
   fetch(`http://localhost:8180/${entity}/${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(updatedData),
+    body: formData,
   })
     .then(response => {
       if (!response.ok) {
         throw new Error(`Error Updating: ${response.status} ${response.statusText}`);
       }
       return response.json();
-    }
-  )
+    })
+    .then(data => {
+      console.log('Entity updated:', data);
+      ListAll(entity); // Refresh the list of entities
+      goBack();
+      // The function goBack() might need to be called here if you want to return to the previous screen
+    })
+    .catch(error => {
+      console.error('Update error:', error);
+    });
 }
+
+
+
+
+
+
 
 function showCreateEntityForm() {
   // Find the currently active entity section
@@ -508,149 +514,33 @@ function getCreateFormHtmlForEntity(entity) {
   return formHtml;
 }
 
-
 function handleSubmit(event, entity) {
   event.preventDefault();
-  const form = event.target;
-  const formData = new FormData(form);
-  let newData = {
-    name: formData.get('name'),
-    email: formData.get('email'),
-    proposals: [{
-      title: formData.get('title'),
-      description: formData.get('description'),
-      companyName: formData.get('companyName'),
-      course: formData.get('course'),
-      studentNumber: formData.get('studentNumber'),
-      candidature_id: parseInt(formData.get('candidature_id'), 10)
-    }]
-  };
-
-  // Collect all proposal related data
-  const proposalTitles = formData.getAll('title[]');
-  const proposalDescriptions = formData.getAll('description[]');
-  const proposalCompanyNames = formData.getAll('companyName[]');
-  const proposalCourses = formData.getAll('course[]');
-  const proposalStudentNumbers = formData.getAll('studentNumber[]');
-  const proposalCandidatureIds = formData.getAll('candidature_id[]');
-
-  // Create proposal objects and add to the newData.proposals array
-  for (let i = 0; i < proposalTitles.length; i++) {
-    let proposal = {
-      title: proposalTitles[i],
-      description: proposalDescriptions[i],
-      companyName: proposalCompanyNames[i],
-      course: proposalCourses[i],
-      studentNumber: proposalStudentNumbers[i],
-      candidature_id: parseInt(proposalCandidatureIds[i], 10)
-    };
-    // Only add proposal if the candidature ID is a number
-    if (!isNaN(proposal.candidature_id)) {
-      newData.proposals.push(proposal);
-    }
-  }
-
-  console.log("Prepared newData for submission:", newData);
-  submitCreate(entity, newData);
+  const formData = new FormData(event.target);
+  submitCreate(entity, formData);
 }
 
-
-
-function bindCreateFormSubmission(entity) {
-  const createForm = document.getElementById('createForm');
-  if (createForm) {
-    createForm.addEventListener('submit', function(event) {
-      event.preventDefault();
-      const formData = new FormData(createForm);
-      const newData = {};
-      formData.forEach((value, key) => {
-        if (key === 'proposals') {
-          if (/^(\d+,)*\d+$/.test(value)) {
-            const proposalIds = value.split(',').map(proposalId => {
-              console.log("Raw proposalId:", proposalId); // Log the raw proposal ID
-              proposalId = proposalId.trim(); // Trim whitespace from the proposal ID
-              console.log("Trimmed proposalId:", proposalId); // Log the trimmed proposal ID
-              const parsedId = parseInt(proposalId, 10);
-              console.log("Parsed proposalId:", parsedId); // Log the parsed proposal ID
-              return parsedId;
-            });
-            console.log("Final proposalIds array:", proposalIds); // Log the final array of proposal IDs
-            newData[key] = proposalIds.map(proposalId => ({ id: proposalId }));
-          } else {
-            console.error("Invalid input for proposals. Expected format: '1,2,3,...'");
-            alert("Invalid input for proposals. Expected format: '1,2,3,...'");
-          }
-        } else {
-          newData[key] = value;
-        }
-      });
-      console.log("Prepared newData for submission:", newData);
-      submitCreate(entity, newData);
-    });
-  }
-}
-
-
-
-function submitCreate(entity, newData) {
-  console.log(entity, JSON.stringify(newData));
-
-  // Set empty fields to null
-  Object.keys(newData).forEach(key => {
-    if (newData[key] === "") {
-      newData[key] = null;
-    }
-  });
-
-  // Handling for the 'professors' entity, where 'proposals' are IDs
-  if (entity === 'professors' && newData.proposals) {
-    const proposalIds = newData.proposals.split(',').map(proposalId => ({ id: parseInt(proposalId.trim(), 10) }));
-    newData.proposals = proposalIds.filter(proposal => !isNaN(proposal.id)); // Filter out any NaN values
-  }
-
-  // Handling for creating a single 'proposal', assuming this is the correct structure
-  if (entity === 'proposals') {
-    const proposalsData = [{
-      title: newData.title,
-      description: newData.description,
-      companyName: newData.companyName,
-      course: newData.course,
-      studentNumber: newData.studentNumber,
-      candidature_id: parseInt(newData.candidature_id, 10)
-    }];
-
-    // Ensure candidature_id is a number
-    if (isNaN(proposalsData[0].candidature_id)) {
-      console.error('Invalid candidature_id:', newData.candidature_id);
-      return; // Exit without submitting
-    }
-
-    newData = proposalsData[0]; // Set newData to the structured proposal object
-  }
-
-  console.log("Final newData to submit:", JSON.stringify(newData));
-
-  // Make the POST request to create a new entity
+function submitCreate(entity, formData) {
+  // Make the fetch request using FormData
   fetch(`http://localhost:8180/${entity}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(newData),
+    body: formData,
   })
     .then(response => {
       if (!response.ok) {
-        // Assuming the server sends a JSON response for errors
-        return response.json().then(err => Promise.reject(err));
+        return response.json().then(error => Promise.reject(error));
       }
       return response.json();
-    }).catch(error => {
+    })
+    .then(data => {
+      console.log('Entity created:', data);
+      ListAll(entity); // Update the list of entities
+      goBack();
+    })
+    .catch(error => {
       console.error('Creation error:', error);
     });
 }
-
-
-
 
 
 function showAutoAssignEntityForm() {
