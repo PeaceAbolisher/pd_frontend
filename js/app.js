@@ -18,46 +18,28 @@ function buildNavbar() {
   `;
 }
 function showEntitySection(entity, fetchData = false, hideForm = true) {
-  // Hide all entity sections
-  document.querySelectorAll('.entity-section').forEach(section => {
-    section.style.display = 'none';
-  });
+  // Hide all entity sections and clear previously shown entity info
+  document.querySelectorAll('.entity-section').forEach(section => section.style.display = 'none');
+  document.getElementById('entityInfoContainer').innerHTML = '';
 
-  // Hide the table and the entity info container
-  const entityList = document.getElementById(`${entity}Section`);
-  entityList.style.display = 'none';
-  const entityInfoContainer = document.getElementById('entityInfoContainer');
-  entityInfoContainer.innerHTML = ''; // Clear the entity info table when switching entities
+  // Hide form and manage button visibility
+  document.getElementById('formContainer').style.display = hideForm ? 'none' : 'block';
+  document.getElementById('createEntityButtonContainer').style.display = entity === 'home' ? 'none' : 'block';
+  document.getElementById('autoAssignEntityButtonContainer').style.display = entity === 'proposals' ? 'block' : 'none';
 
-  // Hide form container by default
-  const formContainer = document.getElementById('formContainer');
-  if (hideForm) {
-    formContainer.style.display = 'none';
-  }
+  // Hide the Back button as we're in a main section
+  hideBackButton();
 
-  // Determine visibility for create button
-  const createButtonContainer = document.getElementById('createEntityButtonContainer');
-  createButtonContainer.style.display = entity === 'home' ? 'none' : 'block'; // Hide on home page
-
-  // Determine visibility for auto assign button
-  const autoAssignButtonContainer = document.getElementById('autoAssignEntityButtonContainer');
-  autoAssignButtonContainer.style.display = 'none';
-
-  if (entity === 'proposals') {
-    autoAssignButtonContainer.style.display = 'block';
-  }
-
-  // Grab the appropriate entity section
+  // Display the current entity section and fetch data if needed
   const entitySection = document.getElementById(`${entity}Section`);
   if (entitySection) {
-    // Display the entity section
     entitySection.style.display = 'block';
-    // Fetch data for the entity if required
     if (fetchData) {
       ListAll(entity);
     }
   }
 }
+
 
 function bindFormSubmissions() {
   document.querySelectorAll('form').forEach(form => {
@@ -111,12 +93,12 @@ function createEntityTable(entity, data) {
     }).join('');
 
     const actionButtons = `
-      <td>
-        <button class="action-button update" onclick="updateEntity('${entity}', ${item.id})">Update</button>
-        <button class="action-button delete" onclick="deleteEntity('${entity}', ${item.id})">Delete</button>
-        <button class="action-button view" onclick="fetchEntityInfo('${entity}', ${item.id})">More Info</button>
-      </td>
-    `;
+  <td>
+    <button class="action-button update" onclick="updateEntity('${entity}', ${item.id})">Update</button>
+    <button class="action-button delete" onclick="deleteEntity('${entity}', ${item.id})">Delete</button>
+    <button class="action-button view" onclick="fetchEntityInfo('${entity}', ${item.id})">More Info</button>
+  </td>
+`;
 
     return `<tr>${rowCells}${actionButtons}</tr>`;
   }).join('')}</tbody>`;
@@ -125,65 +107,73 @@ function createEntityTable(entity, data) {
 
 
 function fetchEntityInfo(entity, id) {
-  // Hide the table
   const entityList = document.getElementById(`${entity}Section`);
-  entityList.style.display = 'none';
-  const formContainer = document.getElementById('formContainer');
-  formContainer.style.display = 'none';
+  entityList.style.display = 'none'; // Hide entity list
 
+  const formContainer = document.getElementById('formContainer');
+  formContainer.style.display = 'none'; // Hide forms
+
+  // Hide both the create and auto assign buttons
+  document.getElementById('createEntityButtonContainer').style.display = 'none';
+  document.getElementById('autoAssignEntityButtonContainer').style.display = 'none';
+
+  // Make the fetch call
   fetch(`http://localhost:8180/${entity}/${id}`)
     .then(response => {
       if (!response.ok) {
-        throw new Error(`Error fetching ${entity} info: ${response.statusText}`);
+        throw new Error(`HTTP status ${response.status}: ${response.statusText}`);
       }
       return response.json();
     })
     .then(data => {
-      displayEntityInfo(entity, data);
+      displayEntityInfo(entity, data); // Display detailed information about the entity
+      showBackButton(entity); // Make sure the back button is shown and properly configured
     })
     .catch(error => {
-      console.error(`Error fetching ${entity} info:`, error);
-      alert(`Error fetching ${entity} info: ${error.message}`);
+      console.error('Error fetching entity info:', error);
+      alert('Failed to fetch details: ' + error.message);
     });
 }
 
+
+
+
+
 function displayEntityInfo(entity, data) {
-  // Check if the entity is a professor and has proposals
-  if (entity === 'professors' && data.proposals && data.proposals.length > 0) {
-    // Construct the detailed information for the professor's proposals
-    const proposalDetails = data.proposals.map(proposal => {
-      return `
-        <h3>Proposal ID: ${proposal.id}</h3>
-        <p>Title: ${proposal.title}</p>
-        <p>Description: ${proposal.description}</p>
-        <p>Company Name: ${proposal.companyName}</p>
-        <p>Course: ${proposal.course}</p>
-        <p>Student Number: ${proposal.studentNumber}</p>
-        <p>Candidature ID: ${proposal.candidature_id}</p>
-      `;
-    }).join('');
+  const infoContainer = document.getElementById('entityInfoContainer');
+  infoContainer.innerHTML = ''; // Clear previous info
 
-    // Display the details in the entityInfoContainer
-    const infoContainer = document.getElementById('entityInfoContainer');
-    infoContainer.innerHTML = proposalDetails;
-  } else {
-    // For other entities or professors without proposals, use existing functionality
-    const infoTableHtml = createEntityInfoTable(entity, data);
-    const infoContainer = document.getElementById('entityInfoContainer');
-    infoContainer.innerHTML = infoTableHtml;
-  }
+  // Construct a table to display all data fields dynamically
+  let htmlContent = `<h3>Details for ${entity.charAt(0).toUpperCase() + entity.slice(1)}</h3>`;
+  htmlContent += '<table class="entity-info-table">';
 
-  // Append the back button to the button container
-  const buttonContainer = document.getElementById('createEntityButtonContainer');
-  const backButton = document.createElement('button');
-  backButton.className = 'back-button';
-  backButton.innerText = 'Back';
-  backButton.onclick = function() {
-    showEntitySection(entity);
-  };
-  buttonContainer.appendChild(backButton);
+  // Create table rows for each key in the data object
+  Object.keys(data).forEach(key => {
+    htmlContent += `
+      <tr>
+        <th>${key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')}</th>
+        <td>${data[key]}</td>
+      </tr>
+    `;
+  });
+
+  htmlContent += '</table>';
+
+  infoContainer.innerHTML = htmlContent;
 }
 
+
+
+
+function showBackButton(entity) {
+  const backButton = document.getElementById('backButton');
+  backButton.onclick = function() { showEntitySection(entity); }; // Set the onclick event to the appropriate handler
+  document.getElementById('backButtonContainer').style.display = 'block'; // Show the Back button
+}
+
+function hideBackButton() {
+  document.getElementById('backButtonContainer').style.display = 'none'; // Hide the Back button
+}
 
 
 
