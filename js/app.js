@@ -410,10 +410,17 @@ function submitUpdate(entity, id, updatedData) {
 }
 
 function showCreateEntityForm() {
-  // Determine which entity form to show based on the active section
+  // Find the currently active entity section
   const currentSection = document.querySelector('.entity-section:not([style*="display: none"])');
+
   if (currentSection) {
     const entity = currentSection.id.replace('Section', '');
+
+    // Hide the current entity list and any displayed entity information
+    currentSection.style.display = 'none';
+    document.getElementById('entityInfoContainer').style.display = 'none';
+
+    // Display the form for the selected entity
     displayCreateForm(entity);
   } else {
     alert('Please select an entity section first.');
@@ -422,55 +429,89 @@ function showCreateEntityForm() {
 
 function displayCreateForm(entity) {
   const formContainer = document.getElementById('formContainer');
-  formContainer.innerHTML = getCreateFormHtmlForEntity(entity); // Generate the form HTML dynamically
-  formContainer.style.display = 'block';
-  bindCreateFormSubmission(entity);
+
+  // Hide all entity sections to ensure the form is the only visible UI component
+  document.querySelectorAll('.entity-section').forEach(section => section.style.display = 'none');
+
+  // Generate and display the form HTML
+  formContainer.innerHTML = getCreateFormHtmlForEntity(entity);
+  formContainer.style.display = 'block';  // Make the form visible
+
+  // Hide other UI components that should not be visible when creating a new entity
+  document.getElementById('createEntityButtonContainer').style.display = 'none';
+  document.getElementById('autoAssignEntityButtonContainer').style.display = 'none';
+  document.getElementById('backButtonContainer').style.display = 'block';  // Show back button to allow user to cancel
 }
+function goBack() {
+  // Hide the form container
+  document.getElementById('formContainer').style.display = 'none';
+
+  // Show the previously active entity section
+  const currentSection = document.querySelector('.entity-section:not([style*="display: none"])');
+  if (!currentSection) {
+    // If no section is visible, default to showing the first section (adjust as necessary)
+    document.getElementById('studentsSection').style.display = 'block';
+  } else {
+    currentSection.style.display = 'block';
+  }
+
+  // Re-display the create and auto assign buttons as appropriate
+  document.getElementById('createEntityButtonContainer').style.display = 'block';
+  if (currentSection && currentSection.id === 'proposalsSection') {
+    document.getElementById('autoAssignEntityButtonContainer').style.display = 'block';
+  }
+
+  // Optionally refresh the list if data might be stale
+  if (currentSection) {
+    const entity = currentSection.id.replace('Section', '');
+    ListAll(entity);
+  }
+}
+
+
 function getCreateFormHtmlForEntity(entity) {
   let formFieldsHtml = '';
-  if (entity === 'students') {
-    formFieldsHtml = `
-      <input type="text" name="name" placeholder="Name">
-      <input type="text" name="num" placeholder="Student Number">
-      <input type="text" name="email" placeholder="Email">
-      <input type="text" name="course" placeholder="Course">
-      <input type="text" name="classification" placeholder="Classification">
-      <input type="text" name="candidature" placeholder="Candidature">
 
+  if (entity === 'students') {
+    formFieldsHtml += `
+      <div><label for="studentName">Name:</label><input type="text" id="studentName" name="name" placeholder="Name"></div>
+      <div><label for="studentNumber">Student Number:</label><input type="text" id="studentNumber" name="num" placeholder="Student Number"></div>
+      <div><label for="studentEmail">Email:</label><input type="text" id="studentEmail" name="email" placeholder="Email"></div>
+      <div><label for="studentCourse">Course:</label><input type="text" id="studentCourse" name="course" placeholder="Course"></div>
+      <div><label for="studentClassification">Classification:</label><input type="text" id="studentClassification" name="classification" placeholder="Classification"></div>
     `;
   } else if (entity === 'professors') {
-    // Professor form fields including all fields necessary to create a proposal
-    formFieldsHtml = `
-      <input type="text" name="name" placeholder="Professor Name">
-      <input type="text" name="email" placeholder="Professor Email">
-      <div id="proposalFieldsContainer">
-        <div class="singleProposalFields">
-          <input type="text" name="title[]" placeholder="Proposal Title">
-          <input type="text" name="description[]" placeholder="Proposal Description">
-          <input type="text" name="companyName[]" placeholder="Company Name Proposal">
-          <input type="text" name="course[]" placeholder="Course Proposal">
-          <input type="text" name="studentNumber[]" placeholder="Student Number Proposal">
-          <input type="text" name="candidature_id[]" placeholder="Candidature ID Proposal">
-        </div>
-      </div>
+    formFieldsHtml += `
+      <div><label for="professorName">Name:</label><input type="text" id="professorName" name="name" placeholder="Professor Name"></div>
+      <div><label for="professorEmail">Email:</label><input type="text" id="professorEmail" name="email" placeholder="Professor Email"></div>
+      <div><label for="titleProposal">Proposal's Title:</label><input type="text" id="titleProposal" name="titleProposal" placeholder="Title Proposal"></div>
+      <div><label for="descriptionProposal">Proposal's Description:</label><input type="text" id="descriptionProposal" name="descriptionProposal" placeholder="Description Proposal"></div>
+      <div><label for="companyNameProposal">Proposal's Company Name:</label><input type="text" id="companyNameProposal" name="companyNameProposal" placeholder="Proposal's Company Name"></div>
+      <div><label for="courseProposal">Proposal's Course:</label><input type="text" id="courseProposal" name="courseProposal" placeholder="Proposal's Course"></div>
+      <div><label for="studentNumberProposal">Proposal's Student Number:</label><input type="text" id="studentNumberProposal" name="studentNumberProposal" placeholder="Proposal's Student Number"></div>
+      <div><label for="candidatureIdProposal">Proposal's Candidature Id:</label><input type="text" id="candidatureIdProposal" name="candidatureIdProposal" placeholder="Proposal's Candidature Id"></div>
     `;
   } else if (entity === 'proposals') {
-    formFieldsHtml = `
-    <input type="text" name="title" placeholder="Title">
-    <input type="text" name="description" placeholder="Description">
-    <input type="text" name="companyName" placeholder="Company Name">
-    <input type="text" name="course" placeholder="Course">
-    <input type="text" name="studentNumber" placeholder="Student Number">
-    <input type="text" name="candidature" placeholder="Candidature ID">
-    <input type="text" name="professor" placeholder="Professor ID">
-  `;
+    formFieldsHtml += `
+      <div><label for="proposalTitle">Title:</label><input type="text" id="proposalTitle" name="title" placeholder="Title"></div>
+      <div><label for="proposalDescription">Description:</label><input type="text" id="proposalDescription" name="description" placeholder="Description"></div>
+      <div><label for="proposalCompanyName">Company Name:</label><input type="text" id="proposalCompanyName" name="companyName" placeholder="Company Name"></div>
+      <div><label for="proposalCourse">Course:</label><input type="text" id="proposalCourse" name="course" placeholder="Course"></div>
+      <div><label for="proposalStudentNumber">Student Number:</label><input type="text" id="proposalStudentNumber" name="studentNumber" placeholder="Student Number"></div>
+      <div><label for="proposalCandidature">Candidature ID:</label><input type="text" id="proposalCandidature" name="candidature" placeholder="Candidature ID"></div>
+    `;
   } else if (entity === 'candidatures') {
-    formFieldsHtml = `
-      <input type="text" name="student" placeholder="Student ID">
-      <input type="text" name="proposal" placeholder="Proposal ID">
+    formFieldsHtml += `
+      <div><label for="candidatureStudent">Student ID:</label><input type="text" id="candidatureStudent" name="student" placeholder="Student ID"></div>
+      <div><label for="candidatureProposal">Proposal ID:</label><input type="text" id="candidatureProposal" name="proposal" placeholder="Proposal ID"></div>
     `;
   }
-  const submitButtonHtml = `<button type="submit">Create</button>`;
+
+  const submitButtonHtml = `
+    <div class="form-button-container">
+      <button type="submit">Create</button>
+    </div>
+  `;
   const formHtml = `
     <form id="createForm" onsubmit="handleSubmit(event, '${entity}')">
       ${formFieldsHtml}
@@ -479,6 +520,7 @@ function getCreateFormHtmlForEntity(entity) {
   `;
   return formHtml;
 }
+
 
 function handleSubmit(event, entity) {
   event.preventDefault();

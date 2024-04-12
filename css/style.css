@@ -244,3 +244,72 @@
 #entityInfoContainer {
   margin-bottom: 20px; /* Add bottom margin to separate from buttons */
 }
+/* Style the form container for a better layout */
+#formContainer {
+  background-color: #f8f8f8; /* Light grey background */
+  border-radius: 8px;       /* Rounded corners */
+  padding: 20px;            /* Some padding around the content */
+  margin: 20px auto;        /* Center the form in the page with some margin */
+  width: 50%;               /* Set form width */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+/* Style individual form fields */
+#formContainer div {
+  margin-bottom: 15px; /* Space out the fields */
+}
+
+/* Style the input fields */
+#formContainer input[type="text"] {
+  width: calc(100% - 22px); /* Full width minus padding and border */
+  padding: 10px;            /* Padding inside the input */
+  margin-top: 5px;          /* Margin top for spacing */
+  border: 1px solid #ddd;   /* Light border for the inputs */
+  border-radius: 4px;       /* Rounded borders for the inputs */
+}
+
+/* Style the labels for better readability */
+#formContainer label {
+  display: block; /* Ensure the label is on a new line */
+  font-weight: bold; /* Make label text bold */
+  margin-bottom: 5px; /* Small space between label and input field */
+}
+
+/* Style the submit button */
+#formContainer button[type="submit"] {
+  background-color: #5cb85c; /* A nice green background */
+  color: white;              /* White text color */
+  padding: 10px 15px;        /* Padding inside the button */
+  border: none;              /* No border */
+  border-radius: 4px;        /* Rounded corners for the button */
+  cursor: pointer;           /* Pointer cursor on hover */
+  font-size: 16px;           /* Slightly larger font size */
+  margin-top: 10px;          /* Margin on the top to separate from fields */
+}
+
+/* Hover effect for submit button */
+#formContainer button[type="submit"]:hover {
+  background-color: #449d44; /* A darker green for hover state */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  #formContainer {
+    width: 90%; /* Full width on smaller screens */
+  }
+}
+/* Container for the Create button to align it to the right */
+.form-button-container {
+  text-align: right; /* Align the button to the right */
+}
+
+/* Style the Create button */
+.form-button-container button {
+  min-width: 100px; /* Optional: Ensures a minimum width for the button */
+  /* Rest of your button styles */
+}
+
+/* Apply the form-button-container class to the Create button's div in your getCreateFormHtmlForEntity function */
+
+
+
