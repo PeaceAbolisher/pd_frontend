@@ -76,18 +76,24 @@ function renderEntityList(entity, data) {
 function createEntityTable(entity, data) {
   // Creating table headers based on entity data keys, excluding proposals for professors
   let headers = Object.keys(data[0]);
-  if (entity === 'professors') {
+  if (entity === 'students') {
+    // Add 'Candidature' as a header for students
+    headers.push('Candidature');
+  }else if (entity === 'professors') {
     headers = headers.filter(header => header !== 'proposals');
-    headers.push('Proposals'); // Add Proposals as the last header before Actions for professors
+    headers.push('Number of Proposals'); // Add 'Number of Proposals' as the last header for professors
   }
   headers.push('Actions'); // Actions header should be last
 
   const thead = `<thead><tr>${headers.map(header => `<th>${header}</th>`).join('')}</tr></thead>`;
   const tbody = `<tbody>${data.map(item => {
     const rowCells = headers.map(header => {
-      if (header === 'Proposals' && entity === 'professors') {
-        // Return a tick or cross depending on whether proposals are present
-        return `<td>${item.proposals && item.proposals.length > 0 ? '✔️' : '❌'}</td>`;
+      if (entity === 'students' && header === 'Candidature') {
+        // Display a tick or cross based on whether the student has a candidature
+        return `<td>${item.candidature ? '✔️' : '❌'}</td>`;
+      }else if (header === 'Number of Proposals') {
+        // Show the number of proposals instead of tick or cross
+        return `<td>${item.proposals ? item.proposals.length : 0}</td>`;
       } else if (header !== 'Actions') {
         // Return the normal data cell
         return `<td>${item[header] !== null ? item[header] : ''}</td>`;
