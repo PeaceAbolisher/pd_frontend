@@ -1,3 +1,5 @@
+let lastActiveEntitySection = ''; // This will keep track of the last active entity section
+
 document.addEventListener('DOMContentLoaded', function() {
   buildNavbar();
   bindFormSubmissions();
@@ -18,6 +20,7 @@ function buildNavbar() {
   `;
 }
 function showEntitySection(entity, fetchData = false, hideForm = true) {
+  lastActiveEntitySection = `${entity}Section`;
   // Hide all entity sections and clear previously shown entity info
   document.querySelectorAll('.entity-section').forEach(section => section.style.display = 'none');
   document.getElementById('entityInfoContainer').innerHTML = '';
@@ -219,14 +222,20 @@ function deleteEntity(entity, id) {
       if (!response.ok) {
         throw new Error(`Error deleting ${entity}: ${response.statusText}`);
       }
-      // Check if the response has content before trying to parse it as JSON
-      if(response.status === 204 || response.statusText === 'No Content') {
-        return {}; // No content
-      } else {
-        return response.json(); // Parse JSON content
-      }
+      // Assuming there is no content in the response on successful deletion
+      return response.text(); // or response.json() if your API returns a JSON response
     })
+    .then(() => {
+      alert(`Deleted Successfully!`);
+      ListAll(entity); // Refresh the entity list after deletion
+      hideBackButton(); // Ensure the back button is hidden if we're back at the list view
+    })
+    .catch(error => {
+      alert(`Error Deleting: ${error.message}`);
+      console.error(`Error Deleting ${entity}:`, error);
+    });
 }
+
 
 
 function displayUpdateForm(entity, id) {
@@ -393,6 +402,7 @@ function showCreateEntityForm() {
   const currentSection = document.querySelector('.entity-section:not([style*="display: none"])');
 
   if (currentSection) {
+    lastActiveEntitySection = currentSection.id; // Store the current section id
     const entity = currentSection.id.replace('Section', '');
 
     // Hide the current entity list and any displayed entity information
@@ -425,27 +435,27 @@ function goBack() {
   // Hide the form container
   document.getElementById('formContainer').style.display = 'none';
 
-  // Show the previously active entity section
-  const currentSection = document.querySelector('.entity-section:not([style*="display: none"])');
-  if (!currentSection) {
-    // If no section is visible, default to showing the first section (adjust as necessary)
-    document.getElementById('studentsSection').style.display = 'block';
+  // Show the last active entity section before the form was opened
+  if (lastActiveEntitySection) {
+    document.getElementById(lastActiveEntitySection).style.display = 'block';
+    document.getElementById('createEntityButtonContainer').style.display = 'block';
+
+    if (lastActiveEntitySection === 'proposalsSection') {
+      document.getElementById('autoAssignEntityButtonContainer').style.display = 'block';
+    }
+    hideBackButton(); // Hide the back button since we are now in the main section
   } else {
-    currentSection.style.display = 'block';
+    document.getElementById('studentsSection').style.display = 'block'; // Default entity section
+    hideBackButton(); // Hide the back button since we are now in the main section
   }
 
-  // Re-display the create and auto assign buttons as appropriate
-  document.getElementById('createEntityButtonContainer').style.display = 'block';
-  if (currentSection && currentSection.id === 'proposalsSection') {
-    document.getElementById('autoAssignEntityButtonContainer').style.display = 'block';
-  }
-
-  // Optionally refresh the list if data might be stale
-  if (currentSection) {
-    const entity = currentSection.id.replace('Section', '');
-    ListAll(entity);
-  }
+  // Refresh the list if data might be stale
+  const entity = lastActiveEntitySection.replace('Section', '');
+  ListAll(entity);
 }
+
+
+
 
 
 function getCreateFormHtmlForEntity(entity) {
