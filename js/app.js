@@ -194,6 +194,8 @@ function updateEntity(entity, id) {
   if (createButtonContainer) {
     createButtonContainer.style.display = 'none';
   }
+  document.getElementById('autoAssignEntityButtonContainer').style.display = 'none';
+
 
   // Show the Back button
   const backButtonContainer = document.getElementById('backButtonContainer');
