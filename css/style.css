@@ -327,5 +327,12 @@
 .radio-option label {
   margin-right: 10px;
 }
+#main-image {
+  width: 65%; /* or any other size */
+  height: auto;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
 
 
