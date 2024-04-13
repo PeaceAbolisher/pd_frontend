@@ -18,6 +18,9 @@ COPY . .
 # Build the app using the production configuration
 RUN npm run build
 
+# Install serve to run the application
+RUN npm install -g serve
+
 # Serve the static files on port 8080
 EXPOSE 8080
 CMD ["serve", "-s", "dist", "-l", "8080"]
