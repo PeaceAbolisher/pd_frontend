@@ -121,7 +121,6 @@ function fetchEntityInfo(entity, id) {
   const formContainer = document.getElementById('formContainer');
   formContainer.style.display = 'none'; // Hide forms
 
-  // Hide both the create and auto assign buttons
   document.getElementById('createEntityButtonContainer').style.display = 'none';
   document.getElementById('autoAssignEntityButtonContainer').style.display = 'none';
 
@@ -293,8 +292,8 @@ function getFormHtmlForEntity(entity) {
   if (entity === 'candidatures') {
     return `
       <form id="updateCandidatureForm">
-        <input type="text" id="candidatureStudent" name="student" placeholder="Student ID">
-        <input type="text" id="candidatureProposal" name="proposal" placeholder="Proposal ID">
+        <input type="text" id="candidatureStudent" name="studentId" placeholder="Student ID">
+        <input type="text" id="candidatureProposal" name="proposalId" placeholder="Proposal ID">
         <div class="assignment-section">
           <label class="assignment-label">Used in Assignment</label>
           <div class="radio-option">
@@ -364,8 +363,8 @@ function bindUpdateFormSubmission(entity, id) {
     }
     if (entity === 'candidatures') {       //--------->falta vero que recebe
       updatedData = {
-        student: updatedData.student ? { id: updatedData.student } : null,
-        proposal: updatedData.proposal ? { id: updatedData.proposal } : null
+        studentId: updatedData.studentId,
+        proposalId: updatedData.proposalId
       };
     }
     submitUpdate(entity, id, updatedData);
@@ -517,10 +516,26 @@ function getCreateFormHtmlForEntity(entity) {
 function handleSubmit(event, entity) {
   event.preventDefault();
   const formData = new FormData(event.target);
+
+  if (entity === 'candidatures') {
+    // Retrieve student ID input and replace 'student' with 'studentId'
+    const studentId = formData.get('student');
+    formData.delete('student');
+    formData.append('studentId', studentId.trim());
+
+    // Retrieve proposal ID input and replace 'proposal' with 'proposalsIds'
+    const proposalIds = formData.get('proposal').split(',').map(s => s.trim()).filter(Boolean);
+    formData.delete('proposal');
+    proposalIds.forEach(id => {
+      formData.append('proposalsIds', id);
+    });
+  }
+
   submitCreate(entity, formData);
 }
 
 function submitCreate(entity, formData) {
+  console.log(formData)
   // Make the fetch request using FormData
   fetch(`http://localhost:8180/${entity}`, {
     method: 'POST',
@@ -538,8 +553,13 @@ function submitCreate(entity, formData) {
       goBack();
     })
     .catch(error => {
-      console.error('Creation error:', error);
+      const errorInfo = {
+        message: error.message,
+        stack: error.stack, // Be careful with logging stack traces in production environments
+      };
+      console.error('Creation error:', JSON.stringify(errorInfo));
     });
+
 }
 
 
