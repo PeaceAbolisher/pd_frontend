@@ -5,7 +5,7 @@ FROM node:alpine
 WORKDIR /usr/src/app
 
 # Copy the static content of your application
-COPY ./frontend /usr/src/app
+COPY . /usr/src/app
 
 # Install serve to run the application
 RUN npm install -g serve
