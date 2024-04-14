@@ -2,10 +2,10 @@
 FROM node:alpine
 
 # Set the working directory in the container
-WORKDIR /usr/src/app
+WORKDIR /frontend
 
 # Copy the static content of your application
-COPY . /usr/src/app
+COPY . .
 
 # Install serve to run the application
 RUN npm install -g serve
